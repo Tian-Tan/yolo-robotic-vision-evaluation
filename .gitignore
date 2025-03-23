@@ -4,5 +4,6 @@ Pipfile
 # result of running subset_images.py script
 images_subset/
 
-# models directory
+# generated directories
 models/
+labels/
