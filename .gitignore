@@ -1,0 +1,5 @@
+# virtual env
+Pipfile
+
+# result of running subset_images.py script
+images_subset/
