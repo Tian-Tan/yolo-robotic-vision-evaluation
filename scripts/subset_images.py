@@ -8,9 +8,10 @@ import os
 from tqdm import tqdm
 
 # Paths
-csv_file = '../labels_val.csv'
-image_source_dir = '../images/' # images folder from the kaggle dataset
-image_eval_dir = '../images_subset/'
+script_dir = os.path.dirname(__file__)
+csv_file = os.path.join(script_dir, '..', 'labels_val.csv')
+image_source_dir = os.path.join(script_dir, '..', 'images/') # images folder from the kaggle dataset
+image_eval_dir = os.path.join(script_dir, '..', 'images_subset/')
 
 # Create subset image folder
 os.makedirs(image_eval_dir, exist_ok=True)
