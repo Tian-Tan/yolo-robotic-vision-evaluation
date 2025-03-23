@@ -1,0 +1,4 @@
+# self_driving.yaml
+val: path/to/self-driving-cars/images/val
+nc: 5
+names: ['car', 'truck', 'pedestrian', 'bicyclist', 'light']
