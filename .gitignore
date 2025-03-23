@@ -3,3 +3,6 @@ Pipfile
 
 # result of running subset_images.py script
 images_subset/
+
+# models directory
+models/
