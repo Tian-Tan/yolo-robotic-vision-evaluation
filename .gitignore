@@ -1,9 +1,12 @@
 # virtual env
 Pipfile
 
-# result of running subset_images.py script
-images_subset/
+# result of running subset_images.py script and renaming images_subset to images
+images/
 
-# generated directories
+# script generated directories
 models/
 labels/
+
+# yolov8 generated directories
+runs/
