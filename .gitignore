@@ -10,3 +10,6 @@ labels/
 
 # yolov8 generated directories
 runs/
+
+# yolov8 cache
+*.cache
