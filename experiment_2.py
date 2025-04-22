@@ -4,7 +4,6 @@ import os
 import time
 import psutil
 import threading
-import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
@@ -45,9 +44,10 @@ class PowerMonitor(threading.Thread):
     def get_power_usage_wh(self):
         return self.power_used / 3600
 
-    def get_power_trace(self):
-        return self.timestamps, self.samples
+    def get_average_wattage(self):
+        return sum(self.samples) / len(self.samples) if self.samples else 0.0
 
+# === Idle power measurement ===
 def measure_idle_power(duration):
     print(f"Measuring idle power for {duration:.2f} seconds...")
     idle_monitor = PowerMonitor()
@@ -57,7 +57,7 @@ def measure_idle_power(duration):
     idle_monitor.join()
     return idle_monitor.get_power_usage_wh()
 
-# List of YOLOv8 model paths
+# === Setup ===
 model_paths = [
     'models/yolov8n.pt',
     # 'models/yolov8s.pt',
@@ -74,16 +74,17 @@ image_files = sorted([
 ])
 
 results_data = []
-all_power_traces = {}
 
+# === Evaluation Loop ===
 for model_path in tqdm(model_paths, desc="Evaluating Models", unit="model"):
+    model_name = os.path.basename(model_path)
     model = YOLO(model_path)
     process_monitor = PowerMonitor(pid=psutil.Process().pid)
-    
+
     start_time = time.time()
     process_monitor.start()
 
-    for image_path in tqdm(image_files, desc=f"Predicting {os.path.basename(model_path)}", leave=False, unit="img"):
+    for image_path in tqdm(image_files, desc=f"Predicting {model_name}", leave=False, unit="img"):
         model.predict(source=image_path, imgsz=imgsz, save=False, verbose=False)
 
     process_monitor.stop()
@@ -93,24 +94,23 @@ for model_path in tqdm(model_paths, desc="Evaluating Models", unit="model"):
     duration = end_time - start_time
     idle_power_wh = measure_idle_power(duration)
     total_power_wh = process_monitor.get_power_usage_wh()
+    avg_wattage = process_monitor.get_average_wattage()
     net_power_wh = max(total_power_wh - idle_power_wh, 0)
 
-    timestamps, power_samples = process_monitor.get_power_trace()
-    all_power_traces[model_path.split('/')[-1]] = (timestamps, power_samples)
-
     results_data.append({
-        'Model': model_path.split('/')[-1],
+        'Model': model_name,
         'Idle Power (Wh)': round(idle_power_wh, 4),
         'Total Power (Wh)': round(total_power_wh, 4),
-        'Net Power (Wh)': round(net_power_wh, 4)
+        'Net Power (Wh)': round(net_power_wh, 4),
+        'Average Wattage (W)': round(avg_wattage, 2)
     })
 
 # === Save Results ===
 results_df = pd.DataFrame(results_data)
 results_df.to_csv('experiment_2_predict_loop_results.csv', index=False)
-print("Power-only results saved to 'experiment_2_predict_loop_results.csv'")
+print("Saved to 'experiment_2_predict_loop_results.csv'")
 
-# === Plot 1: Net Power Consumption Bar Chart ===
+# === Plot Net Power Consumption Bar Chart ===
 plt.figure(figsize=(8, 5))
 plt.bar(results_df['Model'], results_df['Net Power (Wh)'], color='skyblue')
 plt.title('YOLOv8 Net Power Usage by Model')
@@ -118,18 +118,4 @@ plt.xlabel('Model')
 plt.ylabel('Net Power Usage (Wh)')
 plt.tight_layout()
 plt.savefig('net_power_usage_per_model_predict_loop.png')
-plt.show()
-
-# === Plot 2: Power Consumption Over Time ===
-plt.figure(figsize=(10, 6))
-for model, (times, watts) in all_power_traces.items():
-    plt.plot(times, watts, label=model)
-
-plt.title('Power Consumption Over Time During Inference')
-plt.xlabel('Time (s)')
-plt.ylabel('Power (W)')
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig('power_over_time_predict_loop.png')
 plt.show()
